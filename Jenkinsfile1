@@ -4,20 +4,20 @@ pipeline {
         }
 
     environment {
-        DOCKER_REGISTRY = "584294315145.dkr.ecr.us-east-1.amazonaws.com"
-        SONARQUBE_SERVER = "http://54.152.150.181:9000"
+        DOCKER_REGISTRY = "905418319927.dkr.ecr.us-east-1.amazonaws.com/gitlab-app"
+        SONARQUBE_SERVER = "http://100.25.166.193:9000/"
         AWS_REGION = "us-east-1"
         
-        AWS_ECR_ACCOUNT_ID = "533267249366"
+        AWS_ECR_ACCOUNT_ID = "905418319927"
         AWS_ECR_REGION = "us-east-1"
-        AWS_ECR_REPOSITORY = "jenkins-poc"
+        AWS_ECR_REPOSITORY = "gitlab-app"
         DOCKER_IMAGE_NAME = "hello-world-app"
     }
     stages {
         stage('Checkout') {
             steps {
                 retry(3) {
-                    checkout([$class: 'GitSCM', branches: [[name: '*/main']], userRemoteConfigs: [[url: 'https://github.com/shekharbo/hello-world.git']]])
+                    checkout([$class: 'GitSCM', branches: [[name: '*/main']], userRemoteConfigs: [[url: 'https://github.com/Bhargava895/hello-world.git']]])
                 }
             }
         }
@@ -94,7 +94,7 @@ pipeline {
         
         stage('Image scan using trivy') {
             steps {
-                sh 'trivy image 533267249366.dkr.ecr.us-east-1.amazonaws.com/jenkins-poc:latest' // Example command for image vulnerability scanning
+                sh 'trivy image 905418319927.dkr.ecr.us-east-1.amazonaws.com/gitlab-app:latest' // Example command for image vulnerability scanning
             }
         }
         
@@ -116,9 +116,9 @@ pipeline {
         stage('Deploy to EC2') {
             steps {
                 sshagent(['ssh_key']) {
-                    sh "ssh -o StrictHostKeyChecking=no ubuntu@3.86.18.96 aws ecr get-login-password --region ${AWS_ECR_REGION} | docker login --username AWS --password-stdin ${DOCKER_REGISTRY}"
-                    sh "ssh -o StrictHostKeyChecking=no ubuntu@3.86.18.96 docker pull ${AWS_ECR_ACCOUNT_ID}.dkr.ecr.${AWS_ECR_REGION}.amazonaws.com/${AWS_ECR_REPOSITORY}:latest"
-                    sh "ssh -o StrictHostKeyChecking=no ubuntu@3.86.18.96 docker run -d -p 8081:8080 ${DOCKER_REGISTRY}/${AWS_ECR_REPOSITORY}:latest"
+                    sh "ssh -o StrictHostKeyChecking=no ubuntu@100.25.166.193 aws ecr get-login-password --region ${AWS_ECR_REGION} | docker login --username AWS --password-stdin ${DOCKER_REGISTRY}"
+                    sh "ssh -o StrictHostKeyChecking=no ubuntu@100.25.166.193 docker pull ${AWS_ECR_ACCOUNT_ID}.dkr.ecr.${AWS_ECR_REGION}.amazonaws.com/${AWS_ECR_REPOSITORY}:latest"
+                    sh "ssh -o StrictHostKeyChecking=no ubuntu@100.25.166.193 docker run -d -p 8081:8080 ${DOCKER_REGISTRY}/${AWS_ECR_REPOSITORY}:latest"
                 }
             }
         }
