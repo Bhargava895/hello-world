@@ -8,7 +8,7 @@ pipeline {
         PUBLIC_IP = "34.205.65.3"
         AWS_ECR_ACCOUNT_ID = "905418319927"
         AWS_ECR_REGION = "us-east-1"
-        AWS_ECR_REPOSITORY = "gitlab-app"
+        AWS_ECR_REPOSITORY = "jenkins"
         DOCKER_IMAGE_NAME = "hello-world-app"
         SONARQUBE_LOGIN_TOKEN = "sqa_9eeff9fd6fe6cc1ba506f3053f98af90e1236886"
     }
