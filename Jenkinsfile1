@@ -1,18 +1,20 @@
 pipeline {
     agent {
-      label 'ec2'
-        }
+        label 'ec2'
+    }
 
     environment {
-        DOCKER_REGISTRY = "905418319927.dkr.ecr.us-east-1.amazonaws.com/gitlab-app"
-        SONARQUBE_SERVER = "http://100.25.166.193:9000/"
+        DOCKER_REGISTRY = "905418319927.dkr.ecr.us-east-1.amazonaws.com"
+        SONARQUBE_SERVER = "http://34.205.65.3:9000/"
         AWS_REGION = "us-east-1"
-        
+        PUBLIC_IP = "34.205.65.3"
         AWS_ECR_ACCOUNT_ID = "905418319927"
         AWS_ECR_REGION = "us-east-1"
         AWS_ECR_REPOSITORY = "gitlab-app"
         DOCKER_IMAGE_NAME = "hello-world-app"
+        SONARQUBE_LOGIN_TOKEN = "sqa_9eeff9fd6fe6cc1ba506f3053f98af90e1236886"
     }
+
     stages {
         stage('Checkout') {
             steps {
@@ -21,7 +23,7 @@ pipeline {
                 }
             }
         }
-        
+
         stage('Unit Test') {
             steps {
                 sh 'docker --version'
@@ -37,7 +39,7 @@ pipeline {
                """
             }
         }
-        
+
         stage('Code Coverage') {
             steps {
                 sh 'pip install coverage'
@@ -49,21 +51,18 @@ pipeline {
                 cobertura coberturaReportFile: 'coverage.xml'
             }
         }
-        
-       stage('SCA and SonarQube') {
+
+        stage('SCA and SonarQube') {
             steps {
-                // Configure SonarQube environment
                 withSonarQubeEnv('SonarQubeServer') {
-                    // Execute SonarScanner command
                     script {
-                        def scannerHome = tool name: 'SonarQubeScanner', type: 'hudson.plugins.sonar.SonarRunnerInstallation'
+                        def scannerHome = tool 'SonarQubeScanner'
                         if (scannerHome) {
-                            sh 'pwd'
                             sh "/home/hello-world-demo-python/hello-world/sonar-scanner-5.0.1.3006-linux/bin/sonar-scanner \
                                 -Dsonar.projectKey=hello-world \
                                 -Dsonar.sources=src \
-                                -Dsonar.host.url=http://3.86.18.96:9000 \
-                                -Dsonar.login=squ_e758c27be837e60687142a751c8734fea3da9ca3"
+                                -Dsonar.host.url=${SONARQUBE_SERVER} \
+                                -Dsonar.login=${SONARQUBE_LOGIN_TOKEN}"
                         } else {
                             error "SonarQube Scanner not configured."
                         }
@@ -71,54 +70,36 @@ pipeline {
                 }
             }
         }
+
         stage('Build and tag image using Docker') {
             steps {
                 script {
-                    sh 'cd /home/ubuntu/hello-world-demo-python/hello-world'
-                    sh 'pwd'
-                    sh 'ls -l Dockerfile'
-                    sh 'docker build -t hello-world-app .'
-                    // Tag Docker image for AWS ECR
+                    dir('/home/ubuntu/hello-world-demo-python/hello-world') {
+                        sh 'pwd'
+                        sh 'ls -l Dockerfile'
+                        sh 'docker build -t hello-world-app .'
                         sh "docker tag hello-world-app ${AWS_ECR_ACCOUNT_ID}.dkr.ecr.${AWS_ECR_REGION}.amazonaws.com/${AWS_ECR_REPOSITORY}:latest"
-                        
-                        // Authenticate Docker client to AWS ECR
                         withCredentials([usernamePassword(credentialsId: 'aws-ecr-credentials', usernameVariable: 'AWS_ACCESS_KEY_ID', passwordVariable: 'AWS_SECRET_ACCESS_KEY')]) {
                             sh "aws ecr get-login-password --region ${AWS_ECR_REGION} | docker login --username AWS --password-stdin ${AWS_ECR_ACCOUNT_ID}.dkr.ecr.${AWS_ECR_REGION}.amazonaws.com"
-                            
-                            // Push Docker image to AWS ECR
                             sh "docker push ${AWS_ECR_ACCOUNT_ID}.dkr.ecr.${AWS_ECR_REGION}.amazonaws.com/${AWS_ECR_REPOSITORY}:latest"
-                  }
-                }
-            }
-        }
-        
-        stage('Image scan using trivy') {
-            steps {
-                sh 'trivy image 905418319927.dkr.ecr.us-east-1.amazonaws.com/gitlab-app:latest' // Example command for image vulnerability scanning
-            }
-        }
-        
-         stage('Push to AWS ECR') {
-            steps {
-                script {
-                    withCredentials([usernamePassword(credentialsId: 'aws-ecr-credentials', usernameVariable: 'AWS_ACCESS_KEY_ID', passwordVariable: 'AWS_SECRET_ACCESS_KEY')]) {
-                        sh "aws ecr get-login-password --region ${AWS_ECR_REGION} | docker login --username AWS --password-stdin ${DOCKER_REGISTRY}"
-                        sh "docker tag ${DOCKER_IMAGE_NAME}:latest ${DOCKER_REGISTRY}/${AWS_ECR_REPOSITORY}:latest"
-                        //sh "docker push ${DOCKER_REGISTRY}/${AWS_ECR_REPOSITORY}:latest"
-                        //sh 'docker push 533267249366.dkr.ecr.us-east-1.amazonaws.com/jenkins-poc:latest'
-                          sh "docker push ${AWS_ECR_ACCOUNT_ID}.dkr.ecr.${AWS_ECR_REGION}.amazonaws.com/${AWS_ECR_REPOSITORY}:latest"
-
+                        }
                     }
                 }
             }
         }
-        
+
+        stage('Image scan using trivy') {
+            steps {
+                sh "trivy image ${AWS_ECR_ACCOUNT_ID}.dkr.ecr.${AWS_ECR_REGION}.amazonaws.com/${AWS_ECR_REPOSITORY}:latest"
+            }
+        }
+
         stage('Deploy to EC2') {
             steps {
                 sshagent(['ssh_key']) {
-                    sh "ssh -o StrictHostKeyChecking=no ubuntu@100.25.166.193 aws ecr get-login-password --region ${AWS_ECR_REGION} | docker login --username AWS --password-stdin ${DOCKER_REGISTRY}"
-                    sh "ssh -o StrictHostKeyChecking=no ubuntu@100.25.166.193 docker pull ${AWS_ECR_ACCOUNT_ID}.dkr.ecr.${AWS_ECR_REGION}.amazonaws.com/${AWS_ECR_REPOSITORY}:latest"
-                    sh "ssh -o StrictHostKeyChecking=no ubuntu@100.25.166.193 docker run -d -p 8081:8080 ${DOCKER_REGISTRY}/${AWS_ECR_REPOSITORY}:latest"
+                    sh "ssh -o StrictHostKeyChecking=no ubuntu@34.205.65.3 aws ecr get-login-password --region ${AWS_ECR_REGION} | docker login --username AWS --password-stdin ${DOCKER_REGISTRY}"
+                    sh "ssh -o StrictHostKeyChecking=no ubuntu@34.205.65.3 docker pull ${AWS_ECR_ACCOUNT_ID}.dkr.ecr.${AWS_ECR_REGION}.amazonaws.com/${AWS_ECR_REPOSITORY}:latest"
+                    sh "ssh -o StrictHostKeyChecking=no ubuntu@34.205.65.3 docker run -d -p 8081:8080 ${AWS_ECR_ACCOUNT_ID}.dkr.ecr.${AWS_ECR_REGION}.amazonaws.com/${AWS_ECR_REPOSITORY}:latest"
                 }
             }
         }
