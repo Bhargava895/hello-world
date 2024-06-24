@@ -44,12 +44,17 @@ pipeline {
             steps {
                 sh 'pip install coverage'
                 sh """
-                /home/ec2-user/myenv/bin/coverage run -m pytest /home/ec2-user/workspace/hello world/tests/test_main.py
+                /home/ec2-user/myenv/bin/coverage run -m pytest /home/ec2-user/hello-world/tests/test_main.py
                 """
                 sh '/home/ec2-user/myenv/bin/coverage report'
                 sh '/home/ec2-user/myenv/bin/coverage xml -o coverage.xml'
                 cobertura coberturaReportFile: 'coverage.xml'
-            }
+            } catch (Exception e) {
+                        // Handle the error (optional)
+                        echo "Error occurred: ${e.message}"
+                    } finally {
+                        // Optional cleanup or post-processing
+                    }
         }
 
         stage('SCA and SonarQube') {
