@@ -48,7 +48,7 @@ pipeline {
                 """
                 sh '/home/ec2-user/myenv/bin/coverage report'
                 sh '/home/ec2-user/myenv/bin/coverage xml -o coverage.xml'
-                cobertura coberturaReportFile: 'coverage.xml'
+                cobertura coberturaReportFile: '/home/ec2-user/workspace/hello world/coverage.xml'
             }
         }
 
