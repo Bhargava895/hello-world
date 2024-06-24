@@ -49,12 +49,7 @@ pipeline {
                 sh '/home/ec2-user/myenv/bin/coverage report'
                 sh '/home/ec2-user/myenv/bin/coverage xml -o coverage.xml'
                 cobertura coberturaReportFile: 'coverage.xml'
-            } catch (Exception e) {
-                        // Handle the error (optional)
-                        echo "Error occurred: ${e.message}"
-                    } finally {
-                        // Optional cleanup or post-processing
-                    }
+            } 
         }
 
         stage('SCA and SonarQube') {
