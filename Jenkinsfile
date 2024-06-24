@@ -19,7 +19,7 @@ pipeline {
         stage('Checkout') {
             steps {
                 retry(3) {
-                    checkout([$class: 'GitSCM', branches: [[name: '*/main']], userRemoteConfigs: [[url: 'https://github.com/Bhargava895/hello-world.git']]])
+                    checkout([$class: 'GitSCM', branches: [[name: '*/main']], userRemoteConfigs: [[url: 'https://github.com/shekharbo/hello-world.git']]])
                 }
             }
         }
