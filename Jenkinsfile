@@ -1,23 +1,25 @@
 pipeline {
-    agent any
+    agent {
+        label 'ec2'
+    }
 
-    environment {
-        DOCKER_REGISTRY = "905418319927.dkr.ecr.us-east-1.amazonaws.com"
-        SONARQUBE_SERVER = "http://52.86.45.58:9000/"
-        AWS_REGION = "us-east-1"
-        PUBLIC_IP = "52.86.45.58"
-        AWS_ECR_ACCOUNT_ID = "905418319927"
+    environment {  
+        SONARQUBE_SERVER = "http://34.229.189.199:9000/"
         AWS_ECR_REGION = "us-east-1"
-        AWS_ECR_REPOSITORY = "jenkins"
+        AWS_ECR_REPOSITORY = "jenkins-poc"
         DOCKER_IMAGE_NAME = "hello-world-app"
         SONARQUBE_LOGIN_TOKEN = "sqa_9eeff9fd6fe6cc1ba506f3053f98af90e1236886"
+        AWS_ECR_ACCOUNT_ID = "905418319927"
+        AWS_ACCESS_KEY_ID = "AKIA5FTZDFA3WXWEKNEN"
+        AWS_SECRET_ACCESS_KEY = "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"
+        PUBLIC_IP = "34.229.189.199"
     }
 
     stages {
         stage('Checkout') {
             steps {
                 retry(3) {
-                    checkout([$class: 'GitSCM', branches: [[name: '*/main']], userRemoteConfigs: [[url: 'https://github.com/Bhargava895/hello-world.git']]])
+                    checkout([$class: 'GitSCM', branches: [[name: '*/main']], userRemoteConfigs: [[url: 'https://github.com/shekharbo/hello-world.git']]])
                 }
             }
         }
@@ -72,7 +74,7 @@ pipeline {
         stage('Build and tag image using Docker') {
             steps {
                 script {
-                    dir('/home/ubuntu/hello-world-demo-python/hello-world') {
+                    dir('/home/ec2-user/hello-world/hello_world') {
                         sh 'pwd'
                         sh 'ls -l Dockerfile'
                         sh 'docker build -t hello-world-app .'
@@ -95,9 +97,9 @@ pipeline {
         stage('Deploy to EC2') {
             steps {
                 sshagent(['ssh_key']) {
-                    sh "ssh -o StrictHostKeyChecking=no ubuntu@52.86.45.58 aws ecr get-login-password --region ${AWS_ECR_REGION} | docker login --username AWS --password-stdin ${DOCKER_REGISTRY}"
-                    sh "ssh -o StrictHostKeyChecking=no ubuntu@52.86.45.58 docker pull ${AWS_ECR_ACCOUNT_ID}.dkr.ecr.${AWS_ECR_REGION}.amazonaws.com/${AWS_ECR_REPOSITORY}:latest"
-                    sh "ssh -o StrictHostKeyChecking=no ubuntu@52.86.45.58 docker run -d -p 8081:8080 ${AWS_ECR_ACCOUNT_ID}.dkr.ecr.${AWS_ECR_REGION}.amazonaws.com/${AWS_ECR_REPOSITORY}:latest"
+                    sh "ssh -o StrictHostKeyChecking=no ubuntu@$PUBLIC_IP aws ecr get-login-password --region ${AWS_ECR_REGION} | docker login --username AWS --password-stdin ${DOCKER_REGISTRY}"
+                    sh "ssh -o StrictHostKeyChecking=no ubuntu@$PUBLIC_IP docker pull ${AWS_ECR_ACCOUNT_ID}.dkr.ecr.${AWS_ECR_REGION}.amazonaws.com/${AWS_ECR_REPOSITORY}:latest"
+                    sh "ssh -o StrictHostKeyChecking=no ubuntu@$PUBLIC_IP docker run -d -p 8081:8080 ${AWS_ECR_ACCOUNT_ID}.dkr.ecr.${AWS_ECR_REGION}.amazonaws.com/${AWS_ECR_REPOSITORY}:latest"
                 }
             }
         }
