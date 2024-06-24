@@ -1,5 +1,5 @@
 import sys
-sys.path.append('/home/ubuntu/workspace/hello_world_demo')
+sys.path.append('/home/ec2-user/hello-world')
 
 
 import pytest
