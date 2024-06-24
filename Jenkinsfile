@@ -58,7 +58,7 @@ pipeline {
                     script {
                         def scannerHome = tool 'SonarQubeScanner'
                         if (scannerHome) {
-                            sh "/home/hello-world-demo-python/hello-world/sonar-scanner-5.0.1.3006-linux/bin/sonar-scanner \
+                            sh "/opt/sonar-scanner/bin/sonar-scanner \
                                 -Dsonar.projectKey=hello-world \
                                 -Dsonar.sources=src \
                                 -Dsonar.host.url=${SONARQUBE_SERVER} \
