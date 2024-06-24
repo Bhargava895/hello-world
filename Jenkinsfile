@@ -35,7 +35,7 @@ pipeline {
                 . /home/ec2-user/myenv/bin/activate
                 """
                 sh """
-                /usr/local/bin/pytest /home/ec2-user/hello-world/tests/test_main.py
+                /home/ec2-user/myenv/bin/pytest /home/ec2-user/hello-world/tests/test_main.py
                """
             }
         }
