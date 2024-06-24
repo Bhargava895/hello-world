@@ -47,7 +47,7 @@ pipeline {
                 /home/ec2-user/myenv/bin/coverage run -m pytest /home/ec2-user/hello-world/tests/test_main.py
                 """
                 sh '/home/ec2-user/myenv/bin/coverage report'
-                sh '/home/ec2-user/myenv/bin/coverage xml -o coverage.xml'
+                sh '/home/ec2-user/myenv/bin/coverage xml -o /home/ec2-user/workspace/hello world/coverage.xml'
                 cobertura coberturaReportFile: '/home/ec2-user/workspace/hello world/coverage.xml'
             }
         }
