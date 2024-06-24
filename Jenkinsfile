@@ -32,10 +32,10 @@ pipeline {
                 sh 'python3 -m venv ~/myenv'
                 sh """
                 set +x
-                . /home/ubuntu/myenv/bin/activate
+                . /home/ec2-user/myenv/bin/activate
                 """
                 sh """
-                /home/ubuntu/.local/bin/pytest /home/ubuntu/workspace/hello_world_demo/tests/test_main.py
+                /home/ec2-user/myenv/bin/pytest /home/ec2-user/hello-world/tests/test_main.py
                """
             }
         }
@@ -44,10 +44,10 @@ pipeline {
             steps {
                 sh 'pip install coverage'
                 sh """
-                /home/ubuntu/.local/bin/coverage run -m pytest /home/ubuntu/workspace/hello_world_demo/tests/test_main.py
+                /home/ec2-user/myenv/bin/coverage run -m pytest /home/ec2-user/hello-world/tests/test_main.py
                 """
-                sh '/home/ubuntu/.local/bin/coverage report'
-                sh '/home/ubuntu/.local/bin/coverage xml -o coverage.xml'
+                sh '/home/ec2-user/myenv/bin/coverage report'
+                sh '/home/ec2-user/myenv/bin/coverage xml -o coverage.xml'
                 cobertura coberturaReportFile: 'coverage.xml'
             }
         }
